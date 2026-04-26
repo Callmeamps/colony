@@ -19,22 +19,24 @@ class Scout:
         }
 
 class WorkerLoader:
-    """Spec 4.2: RAM-enforced model loading"""
+    """Spec 4.2: RAM-enforced model loading (Bonsai 1-bit)"""
     def __init__(self, pr: PunkRecords):
         self.pr = pr
+        self.bonsai_ram_mb = 1180 # 1.15GB + overhead
 
     async def load_clone(self, clone_id: str):
+        # York 85% block logic for 1.2GB system
+        # Since Bonsai is 1.15GB, York will likely block if anything else is running.
+        # We enforce strict baseline for Bonsai.
         ram = int(await self.pr.r.get("pr:york:ram") or 0)
         
-        # York 85% block
-        if ram / 1200 > 0.85:
+        if (ram + self.bonsai_ram_mb) / 1200 > 0.98:
             await self.pr.r.publish("pr:bus:emergency", json.dumps({
-                "type": "Resource", "status": "BLOCKED"
+                "type": "Resource", "status": "BLOCKED", "reason": "Bonsai requires near-total RAM"
             }))
-            raise Exception("York: RAM > 85%, load blocked")
+            raise Exception("York: Insufficient RAM for Bonsai-8B")
 
-        print(f"[Loader] Loading {clone_id}...")
-        # Simulating INT4 GGUF load
+        print(f"[Loader] Loading Bonsai-8B ({clone_id} mode)...")
         await asyncio.sleep(1.2) 
         await self.pr.r.set("pr:current_load", clone_id)
 

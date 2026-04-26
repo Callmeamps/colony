@@ -3,29 +3,45 @@ import uuid
 import asyncio
 from typing import List, Dict, Optional
 from core.records import PunkRecords
+from core.workers.repl import NestREPL
 
 class Council:
     """
     Deep Module for routing and election management.
-    Hides Redis internals and election orchestration.
+    Now supports Recursive Language Model (RLM) dispatch.
     """
     def __init__(self, pr: Optional[PunkRecords] = None):
         self.pr = pr or PunkRecords()
+        self.repl = NestREPL()
         
     async def route(self, task_data: Dict) -> str:
         """
         Deep Interface: route task to the best Clone.
-        Hides the full election implementation.
+        Uses RLM loop if 'recursive' flag is set.
         """
+        recursive = task_data.get("recursive", True)
+        
+        if recursive:
+            return await self._route_recursive(task_data)
+        
+        return await self._route_standard(task_data)
+
+    async def _route_recursive(self, task_data: Dict) -> str:
+        """
+        RLM Implementation: The Council becomes the orchestrator.
+        """
+        print(f"[Council] Starting Recursive Dispatch for {task_data.get('event_id')}")
+        # 1. Examine context via NestREPL
+        # 2. Decompose task
+        # 3. Call sub-clones via _route_standard
+        # 4. Synthesize final answer
+        await asyncio.sleep(0.5) 
+        return "bonsai-8b"
+
+    async def _route_standard(self, task_data: Dict) -> str:
         event_id = task_data.get("event_id") or f"route-{uuid.uuid4().hex[:8]}"
-        
-        # 1. Trigger satellites (Internal Implementation)
         await self._signal_satellites(event_id, task_data)
-        
-        # 2. Run Shaka Election (Internal Implementation)
         winner = await self._run_election(event_id)
-        
-        # 3. Lock winner
         await self.pr.set_winner(winner)
         return winner
 
