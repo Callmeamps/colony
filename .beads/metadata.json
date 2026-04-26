@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "colony",
+  "project_id": "8fa6273c-7656-4984-ab71-ed473fbfb154"
+}
