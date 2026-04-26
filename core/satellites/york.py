@@ -2,13 +2,23 @@ import asyncio
 import json
 import psutil
 from core.records import PunkRecords, DictatorProtocol
+from core.satellites.base import Satellite
 
-class York:
+class York(Satellite):
     """RAM Governor Satellite (Spec 2.3)"""
     def __init__(self, pr: PunkRecords, dp: DictatorProtocol):
         self.pr = pr
         self.dp = dp
         self.total_ram = 1200 # Boksburg 1.2GB target
+
+    @property
+    def name(self) -> str:
+        return "york"
+
+    async def vote(self, task_data: dict) -> list[str]:
+        """York ranks Clones by RAM cost (Spec 2.3)"""
+        # Voice (300MB) < Chat (300MB) < Code (650MB)
+        return ["voice_worker", "chat_worker", "code_worker"]
         
     async def monitor(self):
         """Main loop: check RAM every 500ms"""
@@ -34,8 +44,3 @@ class York:
                 await self.dp.raise_emergency("Resource", ttl=1)
                 
             await asyncio.sleep(0.5)
-
-    async def get_ballot(self):
-        """York ranks Clones by RAM cost (Spec 2.3)"""
-        # Voice (300MB) < Chat (300MB) < Code (650MB)
-        return ["voice_worker", "chat_worker", "code_worker"]
