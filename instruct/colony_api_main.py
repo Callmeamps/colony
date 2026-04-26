@@ -12,10 +12,9 @@ import time
 import uuid
 import pymongo
 from core.records import PunkRecords, DictatorProtocol
-from core.shaka import Shaka
+from core.council import Council
 from core.sleep import SleepCycle
-from core.nest import query_nest, bootstrap_initial_data
-from core.archivist import Archivist
+from core.nest import Nest
 from core.workers.loader import WorkerLoader, Scout
 
 app = FastAPI(title="Colony API", version="1.0.0")
@@ -23,9 +22,8 @@ app = FastAPI(title="Colony API", version="1.0.0")
 # Setup Core components
 pr = PunkRecords()
 dp = DictatorProtocol(pr)
-shaka = Shaka(pr)
-archivist = Archivist()
-sleep_cycle = SleepCycle(pr, archivist)
+council = Council(pr)
+sleep_cycle = SleepCycle(pr, None) # Archivist removed, logic now in Nest
 loader = WorkerLoader(pr)
 scout = Scout(pr)
 mongo = pymongo.MongoClient("mongodb://localhost:27017")
@@ -94,8 +92,16 @@ async def chat_completions(req: ChatCompletionRequest):
     # Run Scout Urgency Check
     scout_data = await scout.classify(prompt)
     
-    await pr.r.publish("pr:bus:scout", json.dumps({
-        "event_id": event_id, "prompt": prompt, "temperature": req.temperature, "max_tokens": req.max_tokens, "session": req.user, "force_clone": req.metadata.force_clone if req.metadata else None, "source": "api", "urgency": scout_data["urgency"]
+    # Use Deep Council Interface
+    asyncio.create_task(council.route({
+        "event_id": event_id,
+        "prompt": prompt,
+        "temperature": req.temperature,
+        "max_tokens": req.max_tokens,
+        "session": req.user,
+        "force_clone": req.metadata.force_clone if req.metadata else None,
+        "source": "api",
+        "urgency": scout_data["urgency"]
     }))
     
     if req.stream: return EventSourceResponse(stream_generator(event_id, req.model))
@@ -112,7 +118,7 @@ async def chat_completions(req: ChatCompletionRequest):
 
 @app.post("/v1/nest/query")
 async def nest_query(req: NestQueryRequest):
-    res = await query_nest(req.query, req.k)
+    res = await Nest.query(req.query, req.k)
     return {"results": res}
 
 @app.post("/v1/sleep")
@@ -133,7 +139,7 @@ async def websocket_telemetry(websocket: WebSocket):
 
 @app.on_event("startup")
 async def startup():
-    await bootstrap_initial_data()
+    await Nest.bootstrap()
 
 @app.get("/v1/models")
 async def list_models():
