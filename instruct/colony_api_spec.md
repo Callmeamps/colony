@@ -46,6 +46,7 @@ None for localhost. If exposed, use header: `Authorization: Bearer colony-local`
 | colony-code | Code Worker (Clone) 1.3B | Bypasses STV |
 | colony-chat | Chat Worker (Clone) 0.5B | Bypasses STV |
 | colony-voice | Voice Worker (Clone) 0.5B | Bypasses STV |
+| colony-scout | Scout (Bonsai-1.7B) | Direct mode. Lightweight |
 
 **Response — Streaming (SSE):**
 ```
@@ -112,7 +113,8 @@ data: [DONE]
     {"id": "colony-auto", "object": "model", "owned_by": "colony", "permission": []},
     {"id": "colony-code", "object": "model", "owned_by": "colony"},
     {"id": "colony-chat", "object": "model", "owned_by": "colony"},
-    {"id": "colony-voice", "object": "model", "owned_by": "colony"}
+    {"id": "colony-voice", "object": "model", "owned_by": "colony"},
+    {"id": "colony-scout", "object": "model", "owned_by": "colony"}
   ]
 }
 ```
@@ -216,7 +218,7 @@ components:
       properties:
         model:
           type: string
-          enum: [colony-auto, colony-code, colony-chat, colony-voice]
+          enum: [colony-auto, colony-code, colony-chat, colony-voice, colony-scout]
         messages:
           type: array
           items:
@@ -263,8 +265,8 @@ components:
 curl -N http://localhost:7777/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "colony-auto",
-    "messages": [{"role": "user", "content": "write async sleep"}],
+    "model": "colony-scout",
+    "messages": [{"role": "user", "content": "scout ahead"}],
     "stream": true,
     "user": "my-session"
   }'

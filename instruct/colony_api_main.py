@@ -15,7 +15,8 @@ from core.records import PunkRecords, DictatorProtocol
 from core.council import Council
 from core.sleep import SleepCycle
 from core.nest import Nest
-from core.workers.loader import WorkerLoader, Scout
+from core.workers.loader import WorkerLoader
+from core.workers.scout import Scout
 
 app = FastAPI(title="Colony API", version="1.0.0")
 
@@ -38,7 +39,7 @@ class ColonyMetadata(BaseModel):
     dictator_override: bool = False
 
 class ChatCompletionRequest(BaseModel):
-    model: Literal["colony-auto", "colony-code", "colony-chat", "colony-voice"]
+    model: Literal["colony-auto", "colony-code", "colony-chat", "colony-voice", "colony-scout"]
     messages: List[Message]
     stream: bool = True  # Colony default
     temperature: Optional[float] = 0.7
@@ -149,7 +150,8 @@ async def list_models():
             {"id": "colony-auto", "object": "model", "owned_by": "colony"},
             {"id": "colony-code", "object": "model", "owned_by": "colony"},
             {"id": "colony-chat", "object": "model", "owned_by": "colony"},
-            {"id": "colony-voice", "object": "model", "owned_by": "colony"}
+            {"id": "colony-voice", "object": "model", "owned_by": "colony"},
+            {"id": "colony-scout", "object": "model", "owned_by": "colony"}
         ]
     }
 

@@ -3,21 +3,6 @@ import time
 from typing import Optional
 from core.records import PunkRecords
 
-class Scout:
-    """Spec 4.1: Urgency + Direct Answering"""
-    def __init__(self, pr: PunkRecords):
-        self.pr = pr
-
-    async def classify(self, prompt: str) -> dict:
-        """Score urgency 0-1 and check for direct Nest answer"""
-        # In full impl: TinyLlama/Phi inference
-        urgency = 0.5 
-        return {
-            "urgency": urgency,
-            "can_answer_direct": False,
-            "answer": None
-        }
-
 class WorkerLoader:
     """Spec 4.2: RAM-enforced model loading (Bonsai 1-bit)"""
     def __init__(self, pr: PunkRecords):
