@@ -4,3 +4,10 @@
 *.db
 .beads-credential-key
 .beads/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# CI results
+scout_ci_results.json
