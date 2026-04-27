@@ -23,6 +23,7 @@ cmake --build build -j
 ### Bonsai Models
 Download from HuggingFace:
 - Bonsai-8B Q1_0: `https://huggingface.co/prism-ml/Bonsai-8B-gguf`
+- Bonsai-1.7B Q4: `https://huggingface.co/prism-ml/Bonsai-1.7B-gguf` (Scout)
 - Place in `./models/` directory.
 
 ### Python Packages
@@ -74,9 +75,9 @@ colonyctl task "test"
 
 ## 8. Model Setup Notes
 
-- **Scout**: TODO (Bonsai-8B is full model; Scout may be separate small model later)
+- **Scout**: `Bonsai-1.7B-Q4.gguf` (~200MB disk, ~250MB RAM). Always loaded, never unloaded. See `core/workers/scout.py`. Functions: urgency scoring, direct Nest answers (cosine >0.85 threshold).
 - **Worker**: Loads `Bonsai-8B-Q1_0.gguf` via internal llama.cpp binding (not yet implemented)
-- **RAM**: With Bonsai (1.15GB), York will block if any other memory consumer runs. Ensure baseline < 50MB.
+- **RAM**: With Bonsai-8B (1.15GB), York will block if any other memory consumer runs. Ensure baseline < 50MB. Scout adds ~250MB overhead.
 
 ## 9. TODO (Not Implemented Yet)
 
