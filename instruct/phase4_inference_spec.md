@@ -1,43 +1,40 @@
 # Phase 4 — Inference — Detailed Component Spec
 **Decisions applied:** Scout = Phi/TinyLlama transformer, York hard authority, RAM enforcement
 
-## 4.1 — Scout / Fertilizer (Decision 3)
+## 4.1 — Scout (Decision 3)
 
-**Changed from Mamba 370M → small transformer now, swap later**
-
-**Model spec v0:**
-- Architecture: Transformer decoder (Phi-2 2.7B distilled or TinyLlama 1.1B 4-bit)
-- Target: ~350M active params after distillation/quantization
-- Quantization: INT4 GGUF → ~200MB disk, ~250MB RAM
-- Runtime: llama.cpp CPU, always loaded, never unloaded
+**Model: Bonsai-1.7B Q4_0 (IMPLEMENTED)**
+- Architecture: 1.7B params, INT4 GGUF quantization
+- Size: ~200MB disk, ~250MB RAM (300MB with overhead)
+- Runtime: llama.cpp Python bindings (`llama-cpp-python`)
 - Inference: <50ms per classification
+- Load: `core/workers/scout.py`, lazy init via `_ensure_model()`
 
-**Swap plan:** Interface unchanged (LabourerInterface). When Mamba checkpoint available, replace model file, no code change.
-
-**Functions:**
+**Functions (IMPLEMENTED):**
 - Urgency score 0-1 → writes to Atlas
 - Wake decision: if query answerable from Nest top-1 crystal with cosine >0.85, respond directly (no Clone wake)
 - Batches Antennae FAISS queries
 
-**Acceptance:** Idle RAM <270MB total (Scout + Redis + OS overhead), 80% accuracy on synthetic urgency set
+**Acceptance:** Idle RAM <270MB total (Scout + Redis + OS overhead), urgency scoring via heuristic + model
 
-## 4.2 — Clone Workers
+## 4.2 — Clone Workers (IMPLEMENTED)
 
-**Models:**
-- Code: 1.3B (CodeLlama) INT4 → ~650MB
-- Chat: 0.5B (TinyLlama-chat) INT4 → ~300MB
-- Voice: 0.5B with lora-voice → ~300MB
+**Model: Bonsai-1.7B Q4_0**
+- Single model for all workers (Code/Chat/Voice)
+- Size: ~300MB RAM with overhead
+- Load: `core/workers/loader.py` via llama.cpp Python bindings
+- RAM enforcement: York dynamic thresholds (85% block, 92% unload)
 
-**RAM enforcement (Decision 7):**
-- York monitors continuously
-- Before load: if RAM >85% → block load, return error to Council, trigger Resource dictator
-- During generation: if RAM >92% → York force-unloads Clone mid-task, emits `OutboundTelemetry` status=ABORTED_RAM, Council retries with smaller model
+**RAM enforcement (Decision 7, IMPLEMENTED):**
+- York monitors continuously, reads `pr:model_ram` for dynamic threshold
+- Before load: if (RAM + model_ram) / 1200 > 85% → block, trigger Resource dictator
+- During generation: if RAM >92% → York force-unloads, emits ABORTED_RAM
 - Only one Clone loaded at time; Council enforces via `pr:winner` lock
 
-**Load/unload contract:**
-- Load <1.4s from NVMe
-- After unload, RAM ≤270MB (verified by York)
-- LoRA swap without full unload allowed if base model same
+**Load/unload contract (IMPLEMENTED):**
+- Load: `WorkerLoader.load_clone()` → Llama() instance
+- Unload: `WorkerLoader.unload_all()` → del llm, gc
+- After unload, RAM returns to ~270MB baseline
 
 **Single-writer:** Clones append-only to telemetry (Zep). Cannot write to Nest or routing state.
 

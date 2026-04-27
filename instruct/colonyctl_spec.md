@@ -42,7 +42,14 @@ Clone: Chat Worker | Nest: 1,847 nodes | Trauma: 3 | Crystals: 42
 **Latency:** <50ms. **RAM:** 0MB.
 
 ### 4.2 `colonyctl task "<prompt>"`
-**Purpose:** Submit inference task. Streaming by default.  
+**Purpose:** Submit inference task. Routes via Council + RLM. Streaming default.  
+**Flow (IMPLEMENTED):**
+1. Check York RAM (<85%)
+2. Council.route() with RLM recursion (`rlm.RLM()`)
+3. RLM decomposes task → sub-tasks → `_route_standard()`
+4. Publish to `pr:bus:scout` with winner
+5. Stream response via `pr:bus:telemetry`
+
 **Writes:** Publishes `PheromoneSignal` to `pr:bus:scout` with event_id, source='cli'.  
 **Reads:** Subscribes to `pr:bus:telemetry` filtered by session_id.  
 **Streaming:** Prints `delta_text` chunks as they arrive. Ctrl+C publishes abort signal.  
@@ -50,27 +57,15 @@ Clone: Chat Worker | Nest: 1,847 nodes | Trauma: 3 | Crystals: 42
 **Output (streaming):**
 ```
 > colonyctl task "write async sleep"
-[Scout] Urgency: 0.23 → Council routing...
-[Shaka] STV winner: Code Worker (0.74)
-[Code Worker] Loading... 1.2s
+[Council] Routing task via RLM...
+[Council] Task routed to: code_worker
+[Scout] Urgency: 0.23
+[Code Worker] Loading Bonsai-1.7B... 1.2s
 [Stream]
 async def sleep_ms(ms: int):
     await asyncio.sleep(ms / 1000)
 
-[Done] 2.1s | Coherence: 0.94 | RAM peak: 891MB | Crystals: 3
-```
-**Output (--json):**
-```json
-{
-  "text": "async def sleep_ms(ms: int):\n    await asyncio.sleep(ms / 1000)",
-  "metadata": {
-    "clone": "code_worker",
-    "duration_ms": 2100,
-    "coherence": 0.94,
-    "ram_peak_mb": 891,
-    "crystals_used": ["nest:1a3f", "nest:2b4e", "nest:9c1d"]
-  }
-}
+[Done] 2.1s | Coherence: 0.94 | RAM peak: 650MB
 ```
 **Errors:** If York blocks load at >85% RAM, prints `[York] Resource dictator active. Load blocked. Retry later.` and exits 1.
 

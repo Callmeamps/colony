@@ -21,15 +21,20 @@
 | **Shaka**       | The STV (Single Transferable Vote) election process for picking a winner.   | Election, selector        |
 | **Dictator**    | An emergency override that forces a specific state or behavior.            | Override, force-mode      |
 | **Antennae**    | The adaptive prefetch mechanism that prepares Nest context for Clones.      | Context loader, prefetch  |
+| **RLM**         | Recursive Language Model for task decomposition + sub-call routing.       | Recursive model, LLM      |
 
 ## Workers (Inference)
 
 | Term            | Definition                                                                 | Aliases to avoid          |
 | --------------- | -------------------------------------------------------------------------- | ------------------------- |
 | **Clone**       | A specific model instance (Code, Chat, Voice) that executes tasks.         | Model, worker, labourer   |
-| **Scout**       | A small model used for rapid urgency classification and direct answering.  | Fertilizer, classifier    |
+| **Scout**       | A small model (Bonsai-1.7B) for rapid urgency classification.            | Fertilizer, classifier    |
 | **York**        | The RAM governor that enforces resource limits on Clones.                  | RAM guard, governor       |
 | **Zep**         | The short-term session memory storage for conversation history.            | Session DB, buffer        |
+| **WorkerLoader**| Loads Bonsai-1.7B via llama.cpp with York RAM checks.                   | Loader, model loader      |
+| **NestREPL**    | Safe exec/eval sandbox for RLM-generated code. Tools: query, fetch.      | REPL, sandbox            |
+| **Bonsai-1.7B**| 1.7B param model, Q4_0 quantization, ~250MB RAM. Scout + Workers.      | Bonsai, small model       |
+| **llama.cpp**   | C++ inference engine with Python bindings (llama-cpp-python).            | Inference engine          |
 
 ## Evolution (Learning)
 

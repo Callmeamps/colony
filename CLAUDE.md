@@ -52,18 +52,38 @@ bd close <id>         # Complete work
 
 ## Build & Test
 
-_Add your build and test commands here_
-
 ```bash
-# Example:
-# npm install
-# npm test
+# Install dependencies
+pip install -r requirements.txt
+
+# Run integration tests
+python scripts/integration_test.py
+
+# Run E2E verification
+python scripts/integration_test.py
+
+# Lint (if available)
+# flake8 core/ instruct/
 ```
 
 ## Architecture Overview
 
-_Add a brief overview of your project architecture_
+Colony - Boksburg Celeron (1.2GB RAM) model orchestration.
+
+**Core modules (deep modules, small interface):**
+- `core/nest.py` - HybridRAG memory (vector + graph + decay)
+- `core/council.py` - STV routing + RLM recursive dispatch
+- `core/workers/scout.py` - Bonsai-1.7B urgency scoring (llama.cpp)
+- `core/workers/loader.py` - Worker model loading (York RAM-enforced)
+- `core/workers/repl.py` - NestREPL sandbox (safe exec/eval)
+- `core/satellites/york.py` - RAM governor (dynamic thresholds)
+
+**Interface:** `colonyctl` CLI + FastAPI (`instruct/colony_api_main.py`)
 
 ## Conventions & Patterns
 
-_Add your project-specific conventions here_
+- **Deep modules**: Small public interface, deep implementation (see `core/council.py`)
+- **Beads (bd)**: All task tracking via `bd` CLI, never TODO lists
+- **Caveman docs**: Terse, no fluff, technical terms exact
+- **TDD**: Red-green-refactor, one test at a time
+- **Surgical edits**: Touch only what's needed, match existing style

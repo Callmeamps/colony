@@ -1,27 +1,46 @@
 # Colony
 
-Colony is a high-performance model orchestration system designed for Boksburg Celeron hardware (1.2GB RAM limit). It features a decentralized memory (Nest), a voting-based router (Council), and an evolutionary learning loop.
+Colony - model orchestration for Boksburg Celeron (1.2GB RAM). Decentralized memory (Nest), voting router (Council), evolutionary loop.
 
 ## Core Architecture
 
-- **Nest (Memory)**: HybridRAG (Vector + Graph) with exponential forgetting curves.
-- **Council (Routing)**: STV (Single Transferable Vote) election using Satellites (York, Lilith, Atlas).
-- **York (RAM Governor)**: Hard-authority resource management (85% block, 92% unload).
-- **Scout (Triage)**: Bonsai-1.7B Q4 urgency scoring + direct Nest answers. Always loaded, <50ms latency.
-- **Evolution**: LoRA spawning (Drones) and distillation (Raids) judged by Valkyrie.
+- **Nest (Memory)**: HybridRAG (Vector + Graph) + exponential forgetting.
+- **Council (Routing)**: STV election via Satellites (York, Lilith, Atlas). **RLM recursive dispatch**.
+- **York (RAM Governor)**: Dynamic thresholds (85% block, 92% unload) based on loaded model.
+- **Scout (Triage)**: Bonsai-1.7B Q4_0 urgency scoring + direct Nest answers. llama.cpp. Always loaded, <50ms.
+- **Evolution**: LoRA spawning (Drones) + distillation (Raids) judged by Valkyrie.
+- **WorkerLoader**: Loads Bonsai-1.7B via llama.cpp Python bindings. RAM-enforced.
+- **NestREPL**: Safe exec/eval sandbox with tool registry (query, fetch, ingest).
 
 ## Components
 
-- `instruct/`: OpenAI-compatible FastAPI and Python CLI.
-- `core/`: Deep domain modules for Routing, Memory, Evolution, and Scout.
-- `core/workers/scout.py`: Scout implementation — urgency scoring, direct Nest answers.
-- `core/workers/loader.py`: Worker model loading with York RAM enforcement.
-- `models/`: Domain entities and dataclasses.
+- `instruct/`: OpenAI-compatible FastAPI + CLI (`colonyctl`).
+- `core/`: Deep modules - Routing, Memory, Evolution, Scout.
+- `core/council.py`: Council with RLM recursion via `rlms` library.
+- `core/workers/scout.py`: Scout - llama.cpp inference + Nest lookup.
+- `core/workers/loader.py`: WorkerLoader - Bonsai-1.7B with York RAM checks.
+- `core/workers/repl.py`: NestREPL - safe code execution for RLM.
+- `models/`: Config files + model manifests.
+- `scripts/`: Integration tests + E2E verification.
+
+## Status
+
+✅ RLM integration (rlms + llama.cpp)
+✅ NestREPL sandbox
+✅ Bonsai-1.7B integration (Scout + Workers)
+✅ York dynamic thresholds
+✅ E2E verification + integration tests
 
 ## Getting Started
 
-1. Initialize Nest: `colonyctl status`
-2. Submit task: `colonyctl task "write async sleep"`
-3. Monitor RAM: `colonyctl york --watch`
+```bash
+# Install deps
+pip install -r requirements.txt
 
-See `UBIQUITOUS_LANGUAGE.md` for the project glossary.
+# Verify
+colonyctl status
+colonyctl task "test prompt"
+colonyctl york --watch
+```
+
+See `SETUP.md` for full install. `UBIQUITOUS_LANGUAGE.md` for glossary.

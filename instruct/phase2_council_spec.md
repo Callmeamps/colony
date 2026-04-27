@@ -80,3 +80,18 @@
 **Implementation:** background asyncio task, queries Nest top-8, writes to Redis ZSET `pr:prefetch:{session}` TTL 30s. Never blocks generation. Batch up to 3 sessions into single FAISS call.
 
 **Acceptance:** Prefetch <50ms, adaptive switching verified in test harness
+
+## 2.8 — RLM Integration (IMPLEMENTED)
+
+**Recursive Language Model dispatch via `rlms` library:**
+- Council uses `rlm.RLM(model="bonsai-1.7b")` for recursive routing
+- Flow: task → RLM decomposes → sub-tasks → `_route_standard()` per sub-task
+- NestREPL sandbox provides safe `exec()`/`eval()` for RLM-generated code
+- Tools available: `query()`, `fetch()`, `ingest()` (wired to Nest)
+
+**Implementation files:**
+- `core/council.py` - RLM dispatch in `_route_recursive()`
+- `core/workers/repl.py` - NestREPL sandbox
+- `instruct/colonyctl.py` - CLI hooks into Council
+
+**Acceptance:** RLM routes tasks, REPL executes safely, sub-calls stream via `pr:bus:telemetry`
