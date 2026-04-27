@@ -26,7 +26,13 @@ class York(Satellite):
             # In real Boksburg, we'd read /proc/meminfo or similar
             mem = psutil.virtual_memory()
             used_mb = mem.used / (1024 * 1024)
-            pct = (used_mb / self.total_ram) * 100
+            
+            # Get current model RAM requirement
+            model_ram = int(await self.pr.r.get("pr:model_ram") or 300)
+            
+            # Dynamic threshold: block if (used + model_ram) > 85% of total
+            effective_used = used_mb + model_ram
+            pct = (effective_used / self.total_ram) * 100
             
             # Write to Redis for others to read
             await self.pr.r.set("pr:york:ram", int(used_mb))
@@ -36,7 +42,8 @@ class York(Satellite):
                 await self.pr.r.publish("pr:bus:emergency", json.dumps({
                     "type": "Resource",
                     "action": "UNLOAD",
-                    "severity": "CRITICAL"
+                    "severity": "CRITICAL",
+                    "model_ram": model_ram
                 }))
                 await self.dp.raise_emergency("Resource", ttl=3)
             elif pct > 85:

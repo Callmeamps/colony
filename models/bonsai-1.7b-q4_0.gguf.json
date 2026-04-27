@@ -1,0 +1,14 @@
+{
+    "model_name": "Bonsai-1.7B-Q4_0",
+    "model_file": "bonsai-1.7b-q4_0.gguf",
+    "quantization": "Q4_0",
+    "parameters": "1.7B",
+    "disk_size_mb": 200,
+    "ram_usage_mb": 250,
+    "context_window": 512,
+    "n_threads": 2,
+    "use_mlock": true,
+    "source": "https://huggingface.co/prism-ml/Bonsai-1.7B-gguf",
+    "purpose": "Scout inference, Worker loading",
+    "notes": "INT4 quantization. ~0.24GB disk. Replace 8B model for RAM efficiency."
+}

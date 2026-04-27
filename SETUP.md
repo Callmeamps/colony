@@ -75,14 +75,27 @@ colonyctl task "test"
 
 ## 8. Model Setup Notes
 
-- **Scout**: `Bonsai-1.7B-Q4.gguf` (~200MB disk, ~250MB RAM). Always loaded, never unloaded. See `core/workers/scout.py`. Functions: urgency scoring, direct Nest answers (cosine >0.85 threshold).
-- **Worker**: Loads `Bonsai-8B-Q1_0.gguf` via internal llama.cpp binding (not yet implemented)
-- **RAM**: With Bonsai-8B (1.15GB), York will block if any other memory consumer runs. Ensure baseline < 50MB. Scout adds ~250MB overhead.
+- **Scout**: `Bonsai-1.7B-Q4_0.gguf` (~200MB disk, ~250MB RAM). Always loaded, never unloaded. See `core/workers/scout.py`. Functions: urgency scoring, direct Nest answers (cosine >0.85 threshold).
+- **Worker**: Loads `Bonsai-1.7B-Q4_0.gguf` via llama.cpp Python bindings (IMPLEMENTED in `core/workers/loader.py`)
+- **RAM**: With Bonsai-1.7B (~300MB including overhead), system has more headroom. York blocks at 85% dynamic threshold.
 
-## 9. TODO (Not Implemented Yet)
+### Download Model
+```bash
+# Download Bonsai-1.7B Q4_0 from HuggingFace
+cd models/
+wget https://huggingface.co/prism-ml/Bonsai-1.7B-gguf/resolve/main/bonsai-1.7b-q4_0.gguf
+# Verify
+ls -lh bonsai-1.7b-q4_0.gguf  # Should be ~200MB
+```
 
-- RLM integration (`rlm` Python package)
-- NestREPL sandbox
-- Actual Bonsai model loading in `WorkerLoader`
+### Model Config
+Model manifest at `models/bonsai-1.7b-q4_0.gguf.json`
+
+## 9. Verified Features
+
+- ✅ RLM integration (`rlms` Python package) - Council uses RLM for recursive routing
+- ✅ NestREPL sandbox - Safe exec/eval with tool registry
+- ✅ Actual Bonsai model loading in `WorkerLoader` - Uses llama.cpp Python bindings
+- ✅ York dynamic thresholds - Block at 85% based on loaded model RAM
 
 **See `instruct/*.md` for architectural specs.**

@@ -14,7 +14,7 @@ class Scout:
     """
     def __init__(self, pr: PunkRecords, model_path: Optional[str] = None, redis_url: Optional[str] = None):
         self.pr = pr
-        self.model_path = model_path or "models/bonsai-1.7b-q4.gguf"  # Default Bonsai-1.7B
+        self.model_path = model_path or "models/bonsai-1.7b-q4_0.gguf"  # Default Bonsai-1.7B
         self.model = None  # llama.cpp instance (lazy init)
         self.direct_threshold = 0.85  # Cosine similarity threshold for direct answers
         self.urgency_cache = ScoutCache(redis_url or "redis://localhost:6379/0")  # Redis-backed cache
@@ -22,10 +22,15 @@ class Scout:
     def _ensure_model(self):
         """Lazy load model if not already loaded"""
         if self.model is None and self.model_path:
-            # TODO: Integrate llama-cpp-python
-            # from llama_cpp import Llama
-            # self.model = Llama(model_path=self.model_path, n_ctx=512, n_threads=2)
-            pass
+            from llama_cpp import Llama
+            self.model = Llama(
+                model_path=self.model_path,
+                n_ctx=512,
+                n_threads=2,
+                use_mlock=True,
+                verbose=False
+            )
+            print(f"[Scout] Model loaded from {self.model_path}")
             
     async def classify(self, prompt: str) -> Dict[str, Any]:
         """Score urgency 0-1 and check for direct Nest answer

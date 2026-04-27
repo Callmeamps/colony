@@ -19,6 +19,8 @@ from typing import Optional
 from rich.console import Console
 from rich.live import Live
 from rich.table import Table
+from core.council import Council
+from core.records import PunkRecords
 
 app = typer.Typer(help="Colony control interface")
 console = Console()
@@ -104,19 +106,39 @@ async def run_task(prompt: str, stream: bool, session: Optional[str], timeout: i
     r = get_redis_async(cfg)
     event_id = f"cli-{uuid.uuid4().hex[:8]}"
     
+    # Initialize Council with RLM
+    pr = PunkRecords()
+    council = Council(pr)
+    
     # Check York RAM first
     ram = int(await r.get("pr:york:ram") or 0)
     if ram / 1200 > 0.85:
         console.print("[red][York] Resource dictator active. Load blocked. Retry later.[/red]")
         return
 
-    # Publish to pheromone bus
-    await r.publish("pr:bus:scout", json.dumps({
-        "event_id": event_id,
-        "prompt": prompt,
-        "source": "cli",
-        "session": session or f"sess-{uuid.uuid4().hex[:6]}"
-    }))
+    # Route task through Council with RLM
+    console.print(f"[Council] Routing task via RLM...")
+    try:
+        winner = await council.route({
+            "event_id": event_id,
+            "prompt": prompt,
+            "source": "cli",
+            "session": session or f"sess-{uuid.uuid4().hex[:6]}",
+            "recursive": True
+        })
+        console.print(f"[Council] Task routed to: {winner}")
+        
+        # Publish to pheromone bus for satellites
+        await r.publish("pr:bus:scout", json.dumps({
+            "event_id": event_id,
+            "prompt": prompt,
+            "source": "cli",
+            "session": session or f"sess-{uuid.uuid4().hex[:6]}",
+            "winner": winner
+        }))
+    except Exception as e:
+        console.print(f"[red][Council] RLM error: {e}[/red]")
+        return
 
     pubsub = r.pubsub()
     await pubsub.subscribe("pr:bus:telemetry")

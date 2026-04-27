@@ -1,6 +1,11 @@
 import json
-import redis.asyncio as redis
 from typing import Optional, Dict
+
+try:
+    import redis.asyncio as redis
+    REDIS_AVAILABLE = True
+except ImportError:
+    REDIS_AVAILABLE = False
 
 class PunkRecords:
     """Redis Layer for Council state and routing"""

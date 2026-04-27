@@ -1,2 +1,4 @@
 redis>=4.5.0
 hiredis>=2.2.0
+llama-cpp-python>=0.2.0
+rlms>=0.1.0
