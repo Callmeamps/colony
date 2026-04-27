@@ -3,6 +3,7 @@ import time
 from typing import Optional, List, Dict, Any
 from core.records import PunkRecords
 from core.nest import Nest
+from core.cache import ScoutCache
 
 class Scout:
     """Spec 4.1: Urgency scoring + Direct answering from Nest crystals
@@ -11,12 +12,12 @@ class Scout:
     Runtime: llama.cpp CPU, always loaded, never unloaded
     Target: <50ms per classification, <270MB idle RAM total
     """
-    def __init__(self, pr: PunkRecords, model_path: Optional[str] = None):
+    def __init__(self, pr: PunkRecords, model_path: Optional[str] = None, redis_url: Optional[str] = None):
         self.pr = pr
         self.model_path = model_path or "models/bonsai-1.7b-q4.gguf"  # Default Bonsai-1.7B
         self.model = None  # llama.cpp instance (lazy init)
         self.direct_threshold = 0.85  # Cosine similarity threshold for direct answers
-        self.urgency_cache = {}  # Cache urgency patterns for fast lookup
+        self.urgency_cache = ScoutCache(redis_url or "redis://localhost:6379/0")  # Redis-backed cache
         
     def _ensure_model(self):
         """Lazy load model if not already loaded"""
@@ -46,6 +47,12 @@ class Scout:
         # Step 3: Cache result for similar patterns
         self._cache_pattern(prompt, urgency, can_answer_direct)
         
+        # Step 4: Update cache metrics
+        if urgency > 0.5:  # Only cache significant urgency
+            query = self._extract_query(prompt)
+            if query:
+                self.urgency_cache.set_pattern(query, urgency)
+        
         elapsed_ms = (time.time() - start) * 1000
         
         return {
@@ -63,10 +70,13 @@ class Scout:
         """
         urgency = 0.5  # Default
         
-        # Check cached patterns first
-        for pattern, cached_urgency in self.urgency_cache.items():
-            if pattern.lower() in prompt.lower():
+        query = self._extract_query(prompt)
+        if query:
+            cached_urgency = self.urgency_cache.get_pattern(query)
+            if cached_urgency is not None:
+                self.urgency_cache.record_hit()
                 return cached_urgency
+            self.urgency_cache.record_miss()
                 
         # Keywords that indicate urgency
         urgent_keywords = ["error", "bug", "critical", "emergency", "fix", "broken", "fail", "crash"]
@@ -126,17 +136,15 @@ class Scout:
     
     def _cache_pattern(self, prompt: str, urgency: float, can_answer_direct: bool):
         """Cache pattern for faster future lookups"""
-        # Simple pattern caching - in production would use more sophisticated caching
-        query = self._extract_query(prompt)
-        if query:
-            self.urgency_cache[query] = urgency
+        # Redis-backed caching - handled in main classify() method
             
     async def get_stats(self) -> Dict[str, Any]:
         """Return Scout performance stats"""
+        cache_stats = self.urgency_cache.get_stats()
         return {
             "model_loaded": self.model is not None,
             "model_path": self.model_path,
-            "urgency_cache_size": len(self.urgency_cache),
+            "urgency_cache": cache_stats,
             "direct_threshold": self.direct_threshold,
             "idle_ram_mb": 250  # Target RAM usage
         }
